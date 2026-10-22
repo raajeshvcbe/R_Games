@@ -1,33 +1,66 @@
 # R_Games
-Game Platform — Step 1: Deploy Skeleton
-This is intentionally NOT the Rummy game yet. It's the smallest possible app that proves your deployment pipeline (GitHub → Render → live WebSocket) actually works. Once this is live, we add the room/chat/game logic on top of the exact same pattern.
-What's here
-main.py — a FastAPI app with:
-/ — health check
-/test — a page that opens a WebSocket and echoes messages between everyone connected (open it in two tabs to see it work)
-/ws — the WebSocket endpoint itself
-requirements.txt — dependencies
-Steps to deploy
-1. Push this project to GitHub
-Create a free GitHub account if you don't have one: https://github.com/signup
-Create a repository if needed, then push the project files including
-`render.yaml` (via the GitHub web UI or `git push`).
 
-2. Create a Render account
-Go to https://render.com and sign up free (no card needed).
-Click **New → Blueprint**, connect GitHub, and select this repository.
-Render will read `render.yaml` and create the service with the Python runtime.
+A small multiplayer game platform. Rummy is the first playable game; Ludo and
+Solitaire appear in the catalog as coming soon.
 
-Alternatively, for **New → Web Service**, select **Python** (not Docker) and use:
-- Build Command: `pip install -r requirements.txt`
-- Start Command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-- Instance Type: Free
+## Current features
 
-3. Test it
-Render gives you a URL like https://game-platform-xxxx.onrender.com.
-Visit `/` — you should see `{"status": "ok", ...}`.
-Visit `/test` on your phone and laptop at the same time, type a message on
-one, and confirm it appears on the other instantly.
-If that works, the whole pipeline is proven: your server is live, and real-time sync between two different devices works. That's the foundation everything else (Rummy, then Ludo) gets built on.
-Next step
-Once this is deployed and the two-tab test works, come back and we'll add: room codes, player join, deck shuffle/deal, hands, and chat.
+- Game catalog with Rummy available and Ludo/Solitaire marked as coming soon.
+- Temporary unique usernames (no account or password) and editable player names.
+- Public rooms and private rooms joinable by six-character code.
+- Rummy room settings for minimum/maximum players, maximum decks, and scoring
+  format.
+- Join/leave room flows and automatic cleanup after the last player leaves.
+- Live waiting-room and game-state updates over WebSockets.
+- 13-card Indian Rummy: draw/discard turns, printed and wild jokers, valid
+  declarations, and scoring. Players can manually group cards in their own
+  hand into pairs or other groups; grouping is only for arranging cards and
+  does not check or suggest combinations.
+- Points Rummy (one deal), Deals Rummy (2/3/6/10 deals), and Pool Rummy
+  (a creator-selected positive whole-number elimination limit).
+
+The implemented hand rules require one pure sequence and a second sequence.
+Ace can be low or high but does not wrap; a losing hand is capped at 80 points.
+The game selects the fewest decks needed for the seated players, subject to
+the room's maximum-decks setting.
+
+Rooms and usernames are held in server memory. They are temporary and will be
+cleared when the service restarts; this initial deployment is intended for trying
+the flow, not as durable production storage. Inactive sessions expire after
+90 seconds. An open browser tab sends WebSocket heartbeats.
+
+## Project structure
+
+- `app/main.py` contains the platform API, rooms, sessions, and WebSocket handling.
+- `app/games/<game>/` contains each game's rules and game-specific logic.
+- `static/` contains the browser client.
+- `tests/platform/` contains platform and API tests.
+- `tests/games/<game>/` contains tests for each game's rules.
+
+## Run locally
+
+```powershell
+pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+Open http://localhost:8000. The health endpoint is http://localhost:8000/health.
+
+## Run tests
+
+```powershell
+pip install -r requirements-dev.txt
+python -m unittest discover -s tests -v
+```
+
+## Deploy on Render
+
+The `render.yaml` Blueprint configures the Python web service. Push the project
+to GitHub, then in Render choose **New → Blueprint** and select this repository.
+For a manual Web Service, choose **Python** (not Docker) with:
+
+- Build command: `pip install -r requirements.txt`
+- Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+
+After deploy, open the service URL and try creating a public room. Open the URL
+in a second browser or device with a different username to join it.

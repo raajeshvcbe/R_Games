@@ -116,14 +116,49 @@ Patterns worth borrowing:
 
 ## 7. Not yet decided (parking lot)
 
-- Reconnect/grace-period exact duration
-- Public room list vs. private code — support both, or pick one first?
-- Per-game player limits
-- What "single player" room means across different games
+- Reconnect behavior when a session expires after 90 seconds
+- Confirm per-game player limits against each game's final rules
 - Chat scope: per-room only, or also a global lobby chat before joining a room?
+
+## 8. First implementation slice — **current implementation**
+
+- The home page presents a game catalog. Rummy is the first available game;
+  Ludo and Solitaire are visible as coming soon.
+- Rummy players can create a public room or a private room with a shareable
+  code, or join a public waiting room/private room by code.
+- Rummy room settings include a minimum and maximum player count, plus a
+  configurable maximum number of decks. The initial limits are 2–6 players;
+  the game uses the fewest decks needed for the current seats, subject to the
+  room's 1–4 maximum-deck setting.
+- Indian 13-card Rummy is playable: the host starts a deal; players draw from
+  the stock or discard pile, then discard or declare. A declaration must use
+  all 13 cards in melds, with at least one pure sequence and a second sequence.
+  Printed jokers and a randomly selected wild rank are supported. Ace can be
+  low or high, but sequences do not wrap. Players can manually group selected
+  cards into pairs or other groups to arrange their own hand; the game does not
+  suggest or validate those groups.
+- Points Rummy ends after one deal; Deals Rummy supports 2, 3, 6, or 10 deals;
+  Pool Rummy uses a positive whole-number elimination limit selected by the
+  room creator. Losing hands score up to 80 points.
+- A player claims a unique temporary username, starts with that as their
+  display name, and can change their display name while active.
+- A player can only be in one room at a time. Leaving the final seat removes
+  the room; if the host leaves, another player becomes host.
+- Initial lobby state is held in process memory and is not durable across a
+  service restart. Inactive sessions expire after 90 seconds; the browser
+  refreshes its activity heartbeat while open.
+- Lobby and game state changes are sent over WebSockets; each player's hand is
+  only returned to that player.
+
+### Open questions for future improvements
+
+- Whether reconnect grace periods should preserve a seat after the temporary
+  session timeout.
+- Durable/shared storage for rooms and usernames before production use.
+- Whether to add voluntary drop/invalid-declaration penalties and alternate
+  scoring settings.
 
 ---
 
-*Next: once you add more thoughts, we'll turn Sections 2–4 into actual
-data models (User, Room, Game) and the WebSocket message contract between
-client and server.*
+*Next: validate the chosen Rummy rules with players, then add any requested
+scoring, reconnect, or production-persistence improvements.*
